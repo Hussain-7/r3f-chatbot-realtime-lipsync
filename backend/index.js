@@ -51,7 +51,7 @@ const lipSyncMessage = async (message) => {
   await execCommand(
     `Rhubarb\\rhubarb.exe -f json -o audios\\message_${message}.json audios\\message_${message}.wav -r phonetic`
   );
-  console.log(`Lip sync done in ${new Date().getTime() - time}ms`);
+  console.log(`Lip sync conversion time: ${new Date().getTime() - time}ms`);
 };
 
 function isJsonString(str) {
@@ -107,6 +107,7 @@ app.post("/chat", async (req, res) => {
     });
     return;
   }
+  const time = new Date().getTime();
 
   const completion = await openai.chat.completions.create({
     model: "gpt-3.5-turbo",
@@ -130,6 +131,7 @@ app.post("/chat", async (req, res) => {
     ],
   });
 
+  console.log(`ChatGPT response time: ${new Date().getTime() - time}ms`);
   console.log(
     "completion.choices[0].message.content",
     completion.choices[0].message
@@ -140,14 +142,9 @@ app.post("/chat", async (req, res) => {
     isJsonString(completion.choices[0].message.content)
   );
   if (
-    completion.choices[0].message.content.includes("messages") &&
     completion.choices[0].message.content.includes("facialExpression") &&
     completion.choices[0].message.content.includes("animation")
   ) {
-    console.log(
-      "here",
-      JSON.stringify(completion.choices[0].message.content).replace(/\n/g, "")
-    );
     messages = JSON.parse(
       completion.choices[0].message.content.replace(/[\r\n]/gm, "")
     );
