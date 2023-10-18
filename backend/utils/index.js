@@ -29,7 +29,6 @@ export const textToMp3 = async (fileName, text) => {
       headers,
       responseType: "stream",
     });
-    console.log("response.data", response.data);
     response.data.pipe(fs.createWriteStream(fileName));
     const writeStream = fs.createWriteStream(fileName);
     response.data.pipe(writeStream);

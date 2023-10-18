@@ -110,7 +110,7 @@ app.post("/chat", async (req, res) => {
 
   const completion = await openai.chat.completions.create({
     model: "gpt-3.5-turbo",
-    max_tokens: 100,
+    max_tokens: 1000,
     temperature: 0.6,
     messages: [
       {
@@ -135,9 +135,24 @@ app.post("/chat", async (req, res) => {
     completion.choices[0].message
   );
   let messages;
-  if (isJsonString(completion.choices[0].message.content)) {
-    messages = JSON.parse(completion.choices[0].message.content);
-    if (messages.messages) {
+  console.log(
+    "Is Parsable",
+    isJsonString(completion.choices[0].message.content)
+  );
+  if (
+    completion.choices[0].message.content.includes("messages") &&
+    completion.choices[0].message.content.includes("facialExpression") &&
+    completion.choices[0].message.content.includes("animation")
+  ) {
+    console.log(
+      "here",
+      JSON.stringify(completion.choices[0].message.content).replace(/\n/g, "")
+    );
+    messages = JSON.parse(
+      completion.choices[0].message.content.replace(/[\r\n]/gm, "")
+    );
+    console.log(messages.messages);
+    if (messages["messages"]) {
       messages = messages.messages; // ChatGPT is not 100% reliable, sometimes it directly returns an array and sometimes a JSON object with a messages property
     }
   } else {
@@ -149,8 +164,7 @@ app.post("/chat", async (req, res) => {
       },
     ];
   }
-
-  console.log("finalMessages", messages);
+  console.log("messages", messages);
   for (let i = 0; i < messages.length; i++) {
     const message = messages[i];
     // generate audio file
@@ -158,7 +172,7 @@ app.post("/chat", async (req, res) => {
     const textInput = message.text; // The text you wish to convert to speech
     console.log(`Generating audio file for message ${i}`);
     try {
-      console.log(fileName, textInput);
+      console.log("testToMp3: ", fileName, textInput);
       await textToMp3(fileName, textInput);
     } catch (e) {
       console.log("error in voice.textToSpeech method");
