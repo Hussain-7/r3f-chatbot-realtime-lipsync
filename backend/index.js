@@ -8,11 +8,11 @@ import fs from "fs-extra";
 import { textToMp3 } from "./utils/index.js";
 
 dotenv.config();
-console.log("process.env.OPENAI_API_KEY", process.env.OPENAI_API_KEY);
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || "-", // Your OpenAI API key here, I used "-" to avoid errors when the key is not set but you should not do that
+  apiKey: process.env.OPENAI_API_KEY, // Your OpenAI API key here, I used "-" to avoid errors when the key is not set but you should not do that
 });
+console.log("openai", openai);
 console.log("elevenLabsApiKey", process.env.ELEVEN_LABS_API_KEY);
 const elevenLabsApiKey = process.env.ELEVEN_LABS_API_KEY;
 const voiceID = "kgG7dCoKCfLehAPWkJOE";
@@ -28,22 +28,6 @@ app.get("/", (req, res) => {
 
 app.get("/voices", async (req, res) => {
   res.send(await voice.getVoices(elevenLabsApiKey));
-});
-
-app.get("/test", async (req, res) => {
-  try {
-    const fileName = "audios/test2.mp3";
-    const result = await textToMp3(fileName, "hello world what is this shit");
-    res.status(200).json({
-      message: "success",
-      result,
-    });
-  } catch (e) {
-    console.error("Error:", e);
-    res.status(500).json({
-      error: "An error occurred while processing the request.",
-    });
-  }
 });
 
 const execCommand = (command) => {
@@ -63,14 +47,21 @@ const lipSyncMessage = async (message) => {
     `ffmpeg -y -i audios/message_${message}.mp3 audios/message_${message}.wav`
     // -y to overwrite the file
   );
-  console.log(`Conversion done in ${new Date().getTime() - time}ms`);
   // wav to morph targets json
   await execCommand(
-    `./Rhubarb/rhubarb -f json -o audios/message_${message}.json audios/message_${message}.wav -r phonetic`
+    `Rhubarb\\rhubarb.exe -f json -o audios\\message_${message}.json audios\\message_${message}.wav -r phonetic`
   );
-  // -r phonetic is faster but less accurate
   console.log(`Lip sync done in ${new Date().getTime() - time}ms`);
 };
+
+function isJsonString(str) {
+  try {
+    JSON.parse(str);
+  } catch (e) {
+    return false;
+  }
+  return true;
+}
 
 app.post("/chat", async (req, res) => {
   const userMessage = req.body.message;
@@ -117,41 +108,49 @@ app.post("/chat", async (req, res) => {
     return;
   }
 
-  // const completion = await openai.chat.completions.create({
-  //   model: "gpt-3.5-turbo",
-  //   max_tokens: 20,
-  //   temperature: 0.6,
-  //   messages: [
-  //     {
-  //       role: "system",
-  //       content: `
-  //       You are a virtual girlfriend.
-  //       You will always reply with a JSON array of messages. With a maximum of 3 messages.
-  //       Each message has a text, facialExpression, and animation property.
-  //       The different facial expressions are: smile, sad, angry, surprised, funnyFace, and default.
-  //       The different animations are: Talking_0, Talking_1, Talking_2, Crying, Laughing, Rumba, Idle, Terrified, and Angry.
-  //       `,
-  //     },
-  //     {
-  //       role: "user",
-  //       content: userMessage || "Hello",
-  //     },
-  //   ],
-  // });
-  // let messages = JSON.parse(completion.choices[0].message.content);
-  // let message = {
+  const completion = await openai.chat.completions.create({
+    model: "gpt-3.5-turbo",
+    max_tokens: 100,
+    temperature: 0.6,
+    messages: [
+      {
+        role: "system",
+        content: `
+        You are a virtual girlfriend.
+        You will always reply with a JSON array of messages. With a maximum of 3 messages.
+        Each message has a text, facialExpression, and animation property.
+        The different facial expressions are: smile, sad, angry, surprised, funnyFace, and default.
+        The different animations are: Talking_0, Talking_1, Talking_2, Crying, Laughing, Rumba, Idle, Terrified, and Angry.
+        `,
+      },
+      {
+        role: "user",
+        content: userMessage || "Hello",
+      },
+    ],
+  });
 
-  // }
-  // if (messages.messages) {
-  //   messages = messages.messages; // ChatGPT is not 100% reliable, sometimes it directly returns an array and sometimes a JSON object with a messages property
-  // }
-  const messages = [
-    {
-      text: "Hi hussain what are you doing with your time now a days",
-      facialExpression: "smile",
-      animation: "Talking_1",
-    },
-  ];
+  console.log(
+    "completion.choices[0].message.content",
+    completion.choices[0].message
+  );
+  let messages;
+  if (isJsonString(completion.choices[0].message.content)) {
+    messages = JSON.parse(completion.choices[0].message.content);
+    if (messages.messages) {
+      messages = messages.messages; // ChatGPT is not 100% reliable, sometimes it directly returns an array and sometimes a JSON object with a messages property
+    }
+  } else {
+    messages = [
+      {
+        text: completion.choices[0].message.content,
+        facialExpression: "smile",
+        animation: "Talking_1",
+      },
+    ];
+  }
+
+  console.log("finalMessages", messages);
   for (let i = 0; i < messages.length; i++) {
     const message = messages[i];
     // generate audio file
@@ -159,8 +158,7 @@ app.post("/chat", async (req, res) => {
     const textInput = message.text; // The text you wish to convert to speech
     console.log(`Generating audio file for message ${i}`);
     try {
-      console.log(elevenLabsApiKey, voiceID, fileName, textInput);
-      // await voice.textToSpeech(elevenLabsApiKey, voiceID, fileName, textInput);
+      console.log(fileName, textInput);
       await textToMp3(fileName, textInput);
     } catch (e) {
       console.log("error in voice.textToSpeech method");
