@@ -34,6 +34,8 @@ app.get("/voices", async (req, res) => {
 
 app.post("/chat", async (req, res) => {
   const userMessage = req.body.message;
+  const lipSyncMode = req.body.mode;
+
   if (!userMessage) {
     res.send({
       messages: [
@@ -78,7 +80,19 @@ app.post("/chat", async (req, res) => {
   }
 
   // Handle Chat GPT And Then Parse response in required format
-  const messages = await handleAssitantResponse(userMessage);
+  let messages;
+  if (!lipSyncMode) {
+    messages = await handleAssitantResponse(userMessage);
+  } else {
+    messages = [
+      {
+        text: userMessage,
+        facialExpression: "smile",
+        animation: "Talking_1",
+      },
+    ];
+  }
+
   console.log("messages", messages);
   for (let i = 0; i < messages.length; i++) {
     const message = messages[i];

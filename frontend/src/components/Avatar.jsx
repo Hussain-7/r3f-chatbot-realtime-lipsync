@@ -110,11 +110,10 @@ export function Avatar(props) {
   const { nodes, materials, scene } = useGLTF(
     "/models/64f1a714fe61576b46f27ca2.glb"
   );
-
-  const { message, onMessagePlayed, chat } = useChat();
-
+  const { message, onMessagePlayed, chat, setLipSyncMode } = useChat();
   const [lipsync, setLipsync] = useState();
 
+  // ** Handle State on Response from Server
   useEffect(() => {
     console.log(message);
     if (!message) {
@@ -130,13 +129,16 @@ export function Avatar(props) {
     audio.onended = onMessagePlayed;
   }, [message]);
 
+  // ** Handle Avatar Animations Start
   const { animations } = useGLTF("/models/animations.glb");
-
   const group = useRef();
   const { actions, mixer } = useAnimations(animations, group);
   const [animation, setAnimation] = useState(
     animations.find((a) => a.name === "Idle") ? "Idle" : animations[0].name // Check if Idle animation exists otherwise use first animation
   );
+  useEffect(() => {
+    console.log("nodes", nodes);
+  }, []);
   useEffect(() => {
     actions[animation]
       .reset()
@@ -144,6 +146,8 @@ export function Avatar(props) {
       .play();
     return () => actions[animation].fadeOut(0.5);
   }, [animation]);
+
+  // ** Handle Avatar Animations End
 
   const lerpMorphTarget = (target, value, speed = 0.1) => {
     scene.traverse((child) => {
@@ -205,6 +209,7 @@ export function Avatar(props) {
       const currentAudioTime = audio.currentTime;
       for (let i = 0; i < lipsync.mouthCues.length; i++) {
         const mouthCue = lipsync.mouthCues[i];
+        console.log("mouthCue", mouthCue);
         if (
           currentAudioTime >= mouthCue.start &&
           currentAudioTime <= mouthCue.end
@@ -224,7 +229,9 @@ export function Avatar(props) {
     });
   });
 
-  useControls("FacialExpressions", {
+  // ** UI Helper Leva
+  const { lipSyncMode } = useControls("FacialExpressions", {
+    lipSyncMode: false,
     chat: button(() => chat()),
     winkLeft: button(() => {
       setWinkLeft(true);
@@ -267,6 +274,10 @@ export function Avatar(props) {
     }),
   });
 
+  useEffect(() => {
+    setLipSyncMode(lipSyncMode);
+  }, [lipSyncMode]);
+
   const [, set] = useControls("MorphTarget", () =>
     Object.assign(
       {},
@@ -290,6 +301,9 @@ export function Avatar(props) {
     )
   );
 
+  // ** UI Helper Leva End
+
+  // ** To keep blinking randomly between 1 and 5 seconds
   useEffect(() => {
     let blinkTimeout;
     const nextBlink = () => {

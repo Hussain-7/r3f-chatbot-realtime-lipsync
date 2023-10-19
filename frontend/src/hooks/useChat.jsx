@@ -5,6 +5,8 @@ const backendUrl = "http://localhost:3000";
 const ChatContext = createContext();
 
 export const ChatProvider = ({ children }) => {
+  const [lipSyncMode, setLipSyncMode] = useState(false);
+
   const chat = async (message) => {
     setLoading(true);
     const startTime = new Date().getTime();
@@ -13,7 +15,7 @@ export const ChatProvider = ({ children }) => {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ message, mode: lipSyncMode }),
     });
     const resp = (await data.json()).messages;
     console.log("Response Time", new Date().getTime() - startTime);
@@ -45,6 +47,7 @@ export const ChatProvider = ({ children }) => {
         loading,
         cameraZoomed,
         setCameraZoomed,
+        setLipSyncMode,
       }}
     >
       {children}
