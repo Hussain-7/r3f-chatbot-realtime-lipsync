@@ -7,6 +7,7 @@ const ChatContext = createContext();
 export const ChatProvider = ({ children }) => {
   const chat = async (message) => {
     setLoading(true);
+    const startTime = new Date().getTime();
     const data = await fetch(`${backendUrl}/chat`, {
       method: "POST",
       headers: {
@@ -15,6 +16,7 @@ export const ChatProvider = ({ children }) => {
       body: JSON.stringify({ message }),
     });
     const resp = (await data.json()).messages;
+    console.log("Response Time", new Date().getTime() - startTime);
     setMessages((messages) => [...messages, ...resp]);
     setLoading(false);
   };

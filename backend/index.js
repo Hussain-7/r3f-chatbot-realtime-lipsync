@@ -5,15 +5,17 @@ import voice from "elevenlabs-node";
 import express from "express";
 import OpenAI from "openai";
 import fs from "fs-extra";
-import { textToMp3 } from "./utils/index.js";
+import {
+  handleAssitantResponse,
+  lipSyncMessage,
+  textToMp3,
+} from "./utils/index.js";
 
 dotenv.config();
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY, // Your OpenAI API key here, I used "-" to avoid errors when the key is not set but you should not do that
 });
-console.log("openai", openai);
-console.log("elevenLabsApiKey", process.env.ELEVEN_LABS_API_KEY);
 const elevenLabsApiKey = process.env.ELEVEN_LABS_API_KEY;
 const voiceID = "kgG7dCoKCfLehAPWkJOE";
 
@@ -29,39 +31,6 @@ app.get("/", (req, res) => {
 app.get("/voices", async (req, res) => {
   res.send(await voice.getVoices(elevenLabsApiKey));
 });
-
-const execCommand = (command) => {
-  return new Promise((resolve, reject) => {
-    exec(command, (error, stdout, stderr) => {
-      if (error) reject(error);
-      resolve(stdout);
-    });
-  });
-};
-
-const lipSyncMessage = async (message) => {
-  const time = new Date().getTime();
-  console.log(`Starting conversion for message ${message}`);
-  // To convert mp3 to wav
-  await execCommand(
-    `ffmpeg -y -i audios/message_${message}.mp3 audios/message_${message}.wav`
-    // -y to overwrite the file
-  );
-  // wav to morph targets json
-  await execCommand(
-    `Rhubarb\\rhubarb.exe -f json -o audios\\message_${message}.json audios\\message_${message}.wav -r phonetic`
-  );
-  console.log(`Lip sync conversion time: ${new Date().getTime() - time}ms`);
-};
-
-function isJsonString(str) {
-  try {
-    JSON.parse(str);
-  } catch (e) {
-    return false;
-  }
-  return true;
-}
 
 app.post("/chat", async (req, res) => {
   const userMessage = req.body.message;
@@ -107,64 +76,9 @@ app.post("/chat", async (req, res) => {
     });
     return;
   }
-  const time = new Date().getTime();
 
-  const completion = await openai.chat.completions.create({
-    model: "gpt-3.5-turbo",
-    max_tokens: 1000,
-    temperature: 0.6,
-    messages: [
-      {
-        role: "system",
-        content: `
-        You are a virtual assistant.
-        You will always reply with a JSON array of messages. With a maximum of 3 messages.
-        Each message has a text, facialExpression, and animation property.
-        The different facial expressions are: smile, sad, angry, surprised, funnyFace, and default.
-        The different animations are: Talking_0, Talking_1, Talking_2, Crying, Laughing, Rumba, Idle, Terrified, and Angry.
-        `,
-      },
-      {
-        role: "user",
-        content: userMessage || "Hello",
-      },
-    ],
-  });
-
-  console.log(`ChatGPT response time: ${new Date().getTime() - time}ms`);
-  console.log(
-    "completion.choices[0].message.content",
-    completion.choices[0].message
-  );
-  let messages;
-  console.log(
-    "Is Parsable",
-    isJsonString(completion.choices[0].message.content)
-  );
-  if (
-    completion.choices[0].message.content.includes("facialExpression") &&
-    completion.choices[0].message.content.includes("animation")
-  ) {
-    console.log(
-      "here",
-      JSON.stringify(completion.choices[0].message.content).replace(/\n/g, "")
-    );
-    messages = JSON.parse(
-      completion.choices[0].message.content.replace(/[\r\n]/gm, "")
-    );
-    console.log(messages.messages);
-    if (messages["messages"]) {
-      messages = messages.messages; // ChatGPT is not 100% reliable, sometimes it directly returns an array and sometimes a JSON object with a messages property
-    }
-  } else {
-    messages = [
-      {
-        text: completion.choices[0].message.content,
-        facialExpression: "smile",
-        animation: "Talking_1",
-      },
-    ];
-  }
+  // Handle Chat GPT And Then Parse response in required format
+  const messages = await handleAssitantResponse(userMessage);
   console.log("messages", messages);
   for (let i = 0; i < messages.length; i++) {
     const message = messages[i];
@@ -174,7 +88,10 @@ app.post("/chat", async (req, res) => {
     console.log(`Generating audio file for message ${i}`);
     try {
       console.log("testToMp3: ", fileName, textInput);
-      await textToMp3(fileName, textInput);
+      const response = await textToMp3(fileName, textInput);
+      if (!response.status || response.status !== "ok") {
+        console.log("error in voice.textToSpeech method");
+      }
     } catch (e) {
       console.log("error in voice.textToSpeech method");
     }
@@ -197,5 +114,5 @@ const audioFileToBase64 = async (file) => {
 };
 
 app.listen(port, () => {
-  console.log(`Virtual Girlfriend listening on port ${port}`);
+  console.log(`Virtual Assistant listening on port ${port}`);
 });
