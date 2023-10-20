@@ -12,7 +12,10 @@ const openai = new OpenAI({
 
 export const textToMp3 = async (fileName, text) => {
   try {
-    const url = `${process.env.ELEVEN_LABS_API}/text-to-speech/21m00Tcm4TlvDq8ikWAM?optimize_streaming_latency=0&output_format=mp3_44100_128`;
+    const maleVoiceId = "ut8zfZ3npWq3NeQ4h8KE";
+    const femaleVoiceId = "21m00Tcm4TlvDq8ikWAM";
+
+    const url = `${process.env.ELEVEN_LABS_API}/text-to-speech/${maleVoiceId}?optimize_streaming_latency=0&output_format=mp3_44100_128`;
     const headers = {
       accept: "audio/mpeg",
       "Content-Type": "application/json",

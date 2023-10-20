@@ -6,8 +6,7 @@ import {
 } from "@react-three/drei";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useChat } from "../hooks/useChat";
-import { Avatar } from "./Avatar";
-
+import { RpmAvatarTemplate } from "./RpmAvatarTemplate";
 const Dots = (props) => {
   const { loading } = useChat();
   const [loadingText, setLoadingText] = useState("");
@@ -60,7 +59,8 @@ export const Experience = () => {
       <Suspense>
         <Dots position-y={1.75} position-x={-0.02} />
       </Suspense>
-      <Avatar />
+      {/* <Avatar /> */}
+      <RpmAvatarTemplate />
       <ContactShadows opacity={0.7} />
     </>
   );

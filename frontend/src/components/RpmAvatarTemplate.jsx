@@ -103,6 +103,7 @@ const corresponding = {
   H: "viseme_TH",
   X: "viseme_PP",
 };
+
 // const correspondingForCC4 = {
 //   A: "B_M_P",
 //   B: "EE",
@@ -117,9 +118,9 @@ const corresponding = {
 
 let setupMode = false;
 
-export function Avatar(props) {
+export function RpmAvatarTemplate(props) {
   const { nodes, materials, scene } = useGLTF(
-    "/models/64f1a714fe61576b46f27ca2.glb"
+    "https://models.readyplayer.me/653243326c22deba1d27ab85.glb?morphTargets=ARKit,Oculus%20Visemes"
   );
   const { message, onMessagePlayed, chat, setLipSyncMode } = useChat();
   const [lipsync, setLipsync] = useState();
@@ -150,6 +151,7 @@ export function Avatar(props) {
   useEffect(() => {
     console.log("nodes", nodes);
   }, []);
+  console.log("animations", actions);
   useEffect(() => {
     actions[animation]
       .reset()
@@ -195,7 +197,7 @@ export function Avatar(props) {
 
   useFrame(() => {
     !setupMode &&
-      Object.keys(nodes.EyeLeft.morphTargetDictionary).forEach((key) => {
+      Object.keys(nodes.Wolf3D_Avatar.morphTargetDictionary).forEach((key) => {
         const mapping = facialExpressions[facialExpression];
         if (key === "eyeBlinkLeft" || key === "eyeBlinkRight") {
           return; // eyes wink/blink are handled separately
@@ -269,13 +271,13 @@ export function Avatar(props) {
     }),
     logMorphTargetValues: button(() => {
       const emotionValues = {};
-      Object.keys(nodes.EyeLeft.morphTargetDictionary).forEach((key) => {
+      Object.keys(nodes.Wolf3D_Avatar.morphTargetDictionary).forEach((key) => {
         if (key === "eyeBlinkLeft" || key === "eyeBlinkRight") {
           return; // eyes wink/blink are handled separately
         }
         const value =
-          nodes.EyeLeft.morphTargetInfluences[
-            nodes.EyeLeft.morphTargetDictionary[key]
+          nodes.Wolf3D_Avatar.morphTargetInfluences[
+            nodes.Wolf3D_Avatar.morphTargetDictionary[key]
           ];
         if (value > 0.01) {
           emotionValues[key] = value;
@@ -292,13 +294,13 @@ export function Avatar(props) {
   const [, set] = useControls("MorphTarget", () =>
     Object.assign(
       {},
-      ...Object.keys(nodes.EyeLeft.morphTargetDictionary).map((key) => {
+      ...Object.keys(nodes.Wolf3D_Avatar.morphTargetDictionary).map((key) => {
         return {
           [key]: {
             label: key,
             value: 0,
-            min: nodes.EyeLeft.morphTargetInfluences[
-              nodes.EyeLeft.morphTargetDictionary[key]
+            min: nodes.Wolf3D_Avatar.morphTargetInfluences[
+              nodes.Wolf3D_Avatar.morphTargetDictionary[key]
             ],
             max: 1,
             onChange: (val) => {
@@ -334,70 +336,18 @@ export function Avatar(props) {
     <group {...props} dispose={null} ref={group}>
       <primitive object={nodes.Hips} />
       <skinnedMesh
-        name="Wolf3D_Body"
-        geometry={nodes.Wolf3D_Body.geometry}
-        material={materials.Wolf3D_Body}
-        skeleton={nodes.Wolf3D_Body.skeleton}
-      />
-      <skinnedMesh
-        name="Wolf3D_Outfit_Bottom"
-        geometry={nodes.Wolf3D_Outfit_Bottom.geometry}
-        material={materials.Wolf3D_Outfit_Bottom}
-        skeleton={nodes.Wolf3D_Outfit_Bottom.skeleton}
-      />
-      <skinnedMesh
-        name="Wolf3D_Outfit_Footwear"
-        geometry={nodes.Wolf3D_Outfit_Footwear.geometry}
-        material={materials.Wolf3D_Outfit_Footwear}
-        skeleton={nodes.Wolf3D_Outfit_Footwear.skeleton}
-      />
-      <skinnedMesh
-        name="Wolf3D_Outfit_Top"
-        geometry={nodes.Wolf3D_Outfit_Top.geometry}
-        material={materials.Wolf3D_Outfit_Top}
-        skeleton={nodes.Wolf3D_Outfit_Top.skeleton}
-      />
-      <skinnedMesh
-        name="Wolf3D_Hair"
-        geometry={nodes.Wolf3D_Hair.geometry}
-        material={materials.Wolf3D_Hair}
-        skeleton={nodes.Wolf3D_Hair.skeleton}
-      />
-      <skinnedMesh
-        name="EyeLeft"
-        geometry={nodes.EyeLeft.geometry}
-        material={materials.Wolf3D_Eye}
-        skeleton={nodes.EyeLeft.skeleton}
-        morphTargetDictionary={nodes.EyeLeft.morphTargetDictionary}
-        morphTargetInfluences={nodes.EyeLeft.morphTargetInfluences}
-      />
-      <skinnedMesh
-        name="EyeRight"
-        geometry={nodes.EyeRight.geometry}
-        material={materials.Wolf3D_Eye}
-        skeleton={nodes.EyeRight.skeleton}
-        morphTargetDictionary={nodes.EyeRight.morphTargetDictionary}
-        morphTargetInfluences={nodes.EyeRight.morphTargetInfluences}
-      />
-      <skinnedMesh
-        name="Wolf3D_Head"
-        geometry={nodes.Wolf3D_Head.geometry}
-        material={materials.Wolf3D_Skin}
-        skeleton={nodes.Wolf3D_Head.skeleton}
-        morphTargetDictionary={nodes.Wolf3D_Head.morphTargetDictionary}
-        morphTargetInfluences={nodes.Wolf3D_Head.morphTargetInfluences}
-      />
-      <skinnedMesh
-        name="Wolf3D_Teeth"
-        geometry={nodes.Wolf3D_Teeth.geometry}
-        material={materials.Wolf3D_Teeth}
-        skeleton={nodes.Wolf3D_Teeth.skeleton}
-        morphTargetDictionary={nodes.Wolf3D_Teeth.morphTargetDictionary}
-        morphTargetInfluences={nodes.Wolf3D_Teeth.morphTargetInfluences}
+        name="Wolf3D_Avatar"
+        geometry={nodes.Wolf3D_Avatar.geometry}
+        material={materials.Wolf3D_Avatar}
+        skeleton={nodes.Wolf3D_Avatar.skeleton}
+        morphTargetDictionary={nodes.Wolf3D_Avatar.morphTargetDictionary}
+        morphTargetInfluences={nodes.Wolf3D_Avatar.morphTargetInfluences}
       />
     </group>
   );
 }
 
-useGLTF.preload("/models/64f1a714fe61576b46f27ca2.glb");
+useGLTF.preload(
+  "https://models.readyplayer.me/653243326c22deba1d27ab85.glb?morphTargets=ARKit,Oculus%20Visemes"
+);
 useGLTF.preload("/models/animations.glb");
